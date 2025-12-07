@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Bengkel Admin</title>
+    <style>
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Login Container */
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background: #161b22;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            overflow: hidden;
+        }
+
+        .login-header {
+            padding: 24px;
+            border-bottom: 1px solid #30363d;
+            text-align: center;
+            background: #1c2128;
+        }
+
+        .login-header h2 {
+            color: #f0f6fc;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .login-body {
+            padding: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-login:hover {
+            background: #30363d;
+        }
+
+        /* Main Container */
+        .main-container {
+            display: none;
+            width: 100%;
+            max-width: 1400px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 90vh;
+        }
+
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1c2128;
+        }
+
+        .app-header h1 {
+            color: #f0f6fc;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover {
+            background: #30363d;
+        }
+
+        /* Main Layout */
+        .app-main {
+            display: flex;
+            min-height: calc(90vh - 73px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            border-right: 1px solid #30363d;
+            background: #161b22;
+            padding: 20px 0;
+        }
+
+        .sidebar-item {
+            padding: 12px 20px;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background: #1c2128;
+            color: #f0f6fc;
+        }
+
+        .sidebar-item.active {
+            background: #1c2128;
+            color: #f0f6fc;
+            border-left-color: #58a6ff;
+        }
+
+        /* Content */
+        .content {
+            flex: 1;
+            padding: 24px;
+            background: #0d1117;
+            overflow-y: auto;
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .page-header h2 {
+            color: #f0f6fc;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .stat-card .label {
+            color: #8b949e;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            color: #f0f6fc;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 36px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b949e;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 16px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1c2128;
+            color: #f0f6fc;
+        }
+
+        .btn-primary:hover {
+            background: #30363d;
+        }
+
+        .btn-success {
+            background: #21262d;
+            color: #3fb950;
+            border-color: #3fb950;
+        }
+
+        .btn-success:hover {
+            background: rgba(63, 185, 80, 0.1);
+        }
+
+        .btn-danger {
+            background: #21262d;
+            color: #f85149;
+            border-color: #f85149;
+        }
+
+        .btn-danger:hover {
+            background: rgba(248, 81, 73, 0.1);
+        }
+
+        .btn-pdf {
+            background: #21262d;
+            color: #f85149;
+            border-color: #f85149;
+        }
+
+        .btn-pdf:hover {
+            background: rgba(248, 81, 73, 0.1);
+        }
+
+        /* Tables */
+        .table-container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            color: #8b949e;
+            font-size: 13px;
+            font-weight: 600;
+            background: #1c2128;
+            border-bottom: 1px solid #30363d;
+        }
+
+        td {
+            padding: 16px;
+            color: #c9d1d9;
+            font-size: 14px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        tbody tr:hover {
+            background: rgba(177, 186, 196, 0.08);
+        }
+
+        /* Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge-success {
+            background: rgba(63, 185, 80, 0.1);
+            color: #3fb950;
+        }
+
+        .badge-warning {
+            background: rgba(187, 128, 9, 0.1);
+            color: #d29922;
+        }
+
+        .badge-danger {
+            background: rgba(248, 81, 73, 0.1);
+            color: #f85149;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            color: #f0f6fc;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #30363d;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Report Controls */
+        .report-controls {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .date-range {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .date-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-main {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #30363d;
+                padding: 0;
+            }
+
+            .sidebar-nav {
+                display: flex;
+                overflow-x: auto;
+            }
+
+            .sidebar-item {
+                padding: 12px 16px;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                white-space: nowrap;
+            }
+
+            .sidebar-item.active {
+                border-left: none;
+                border-bottom-color: #58a6ff;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .date-range {
+                flex-direction: column;
+            }
+
+            .date-group {
+                width: 100%;
+            }
+        }
+
+        /* Page Styles */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8b949e;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Print Styles */
+        @media print {
+
+            .app-header,
+            .sidebar,
+            .toolbar,
+            .report-controls,
+            .btn,
+            .modal,
+            .search-box,
+            .empty-state-icon {
+                display: none !important;
+            }
+
+            .content,
+            .page,
+            body {
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                color: black !important;
+                width: 100% !important;
+                min-height: auto !important;
+                display: block !important;
+            }
+
+            .table-container {
+                border: none !important;
+                box-shadow: none !important;
+                background: white !important;
+                overflow: visible !important;
+            }
+
+            table {
+                border-collapse: collapse !important;
+                width: 100% !important;
+                background: white !important;
+            }
+
+            th,
+            td {
+                border: 1px solid #000 !important;
+                padding: 8px !important;
+                color: black !important;
+                background: white !important;
+                font-size: 12px !important;
+            }
+
+            th {
+                background-color: #f0f0f0 !important;
+                font-weight: bold !important;
+            }
+
+            .badge {
+                background: none !important;
+                color: black !important;
+                border: 1px solid #000 !important;
+                padding: 2px 6px !important;
+                font-size: 10px !important;
+            }
+
+            .empty-state {
+                display: none !important;
+            }
+
+            /* Pastikan semua konten terlihat */
+            .page {
+                display: block !important;
+                opacity: 1 !important;
+            }
+
+            #main-app {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                border: none !important;
+            }
+
+            .app-main {
+                display: block !important;
+                min-height: auto !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="login-container">
+        <div class="login-header">
+            <h2>Bengkel Admin</h2>
+        </div>
+        <div class="login-body">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="login-user" value="admin">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="login-pass" value="admin123">
+            </div>
+            <button onclick="doLogin()" class="btn-login">Login</button>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-container">
+        <!-- Header -->
+        <div class="app-header">
+            <h1>Bengkel Management System</h1>
+            <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="app-main">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-item active" onclick="showPage('dashboard')">Dashboard</div>
+                <div class="sidebar-item" onclick="showPage('customer')">Customer</div>
+                <div class="sidebar-item" onclick="showPage('item')">Barang</div>
+                <div class="sidebar-item" onclick="showPage('transaction')">Transaksi</div>
+                <div class="sidebar-item" onclick="showPage('report')">Laporan</div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard -->
+                <div id="page-dashboard" class="page active">
+                    <div class="page-header">
+                        <h2>Dashboard</h2>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="label">Total Customer</div>
+                            <div class="value" id="customer-count">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Total Barang</div>
+                            <div class="value" id="item-count">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Total Transaksi</div>
+                            <div class="value" id="transaction-count">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Pendapatan</div>
+                            <div class="value" id="revenue-count">Rp 0</div>
+                        </div>
+                    </div>
+
+                    <div class="page-header">
+                        <h2>Aktivitas Terbaru</h2>
+                    </div>
+                    <div class="table-container">
+                        <table id="table-activity">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Tipe</th>
+                                    <th>Deskripsi</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="empty-state">
+                                        <div class="empty-state-icon">📊</div>
+                                        <div>Tidak ada aktivitas</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Customer Page -->
+                <div id="page-customer" class="page">
+                    <div class="page-header">
+                        <h2>Customer</h2>
+                    </div>
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="search-customer" placeholder="Cari customer..."
+                                onkeyup="searchCustomer()">
+                        </div>
+                        <button onclick="openCustomerModal()" class="btn btn-success">Tambah Customer</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="table-customer">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nama</th>
+                                    <th>Telepon</th>
+                                    <th>Alamat</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Item Page -->
+                <div id="page-item" class="page">
+                    <div class="page-header">
+                        <h2>Barang</h2>
+                    </div>
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="search-item" placeholder="Cari barang..." onkeyup="searchItem()">
+                        </div>
+                        <button onclick="openItemModal()" class="btn btn-success">Tambah Barang</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="table-item">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nama Barang</th>
+                                    <th>Stok</th>
+                                    <th>Harga</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Transaction Page -->
+                <div id="page-transaction" class="page">
+                    <div class="page-header">
+                        <h2>Transaksi</h2>
+                    </div>
+                    <div class="toolbar">
+                        <button onclick="openTransactionModal()" class="btn btn-success">Buat Transaksi</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="table-transaction">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tanggal</th>
+                                    <th>Customer</th>
+                                    <th>Keluhan</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Report Page -->
+                <div id="page-report" class="page">
+                    <div class="page-header">
+                        <h2>Laporan</h2>
+                    </div>
+                    <div class="report-controls">
+                        <div class="date-range">
+                            <div class="date-group">
+                                <label>Tanggal Mulai</label>
+                                <input type="date" id="report-start-date">
+                            </div>
+                            <div class="date-group">
+                                <label>Tanggal Akhir</label>
+                                <input type="date" id="report-end-date">
+                            </div>
+                            <button onclick="loadReport()" class="btn btn-primary">Tampilkan</button>
+                            <button onclick="printReport()" class="btn btn-primary">Cetak</button>
+                            <button onclick="generatePDFReport()" class="btn btn-pdf">Cetak PDF</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="table-report">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>ID Transaksi</th>
+                                    <th>Customer</th>
+                                    <th>Keluhan</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Customer Modal -->
+    <div id="modal-customer" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Customer</h3>
+                <button onclick="closeModal('modal-customer')" class="modal-close">×</button>
+            </div>
+            <form onsubmit="saveCustomer(); return false;">
+                <div class="modal-body">
+                    <input type="hidden" id="customer-id">
+                    <div class="form-group">
+                        <label>Nama Customer</label>
+                        <input type="text" id="customer-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>No. Telepon</label>
+                        <input type="text" id="customer-phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Alamat</label>
+                        <textarea id="customer-address"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" onclick="closeModal('modal-customer')" class="btn">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div id="modal-item" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Barang</h3>
+                <button onclick="closeModal('modal-item')" class="modal-close">×</button>
+            </div>
+            <form onsubmit="saveItem(); return false;">
+                <div class="modal-body">
+                    <input type="hidden" id="item-id">
+                    <div class="form-group">
+                        <label>Nama Barang</label>
+                        <input type="text" id="item-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stok</label>
+                        <input type="number" id="item-stock" required min="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Harga</label>
+                        <input type="number" id="item-price" required min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" onclick="closeModal('modal-item')" class="btn">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transaction Modal (DIPERBAIKI) -->
+    <div id="modal-transaction" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Transaksi</h3>
+                <button onclick="closeModal('modal-transaction')" class="modal-close">×</button>
+            </div>
+            <form onsubmit="saveTransaction(); return false;">
+                <div class="modal-body">
+                    <input type="hidden" id="transaction-id">
+                    <div class="form-group">
+                        <label>Customer</label>
+                        <select id="transaction-customer" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tanggal</label>
+                        <input type="date" id="transaction-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Keluhan</label>
+                        <textarea id="transaction-complaint"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Total Bayar</label>
+                        <input type="number" id="transaction-total" required min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" onclick="closeModal('modal-transaction')" class="btn">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentPage = 'dashboard';
+
+        console.log("JavaScript loaded successfully");
+
+        // Login function
+        function doLogin() {
+            const username = document.getElementById('login-user').value;
+            const password = document.getElementById('login-pass').value;
+
+            if (!username || !password) {
+                alert('Username dan password harus diisi!');
+                return;
+            }
+
+            try {
+                if (typeof app !== 'undefined' && app.loginAdmin(username, password)) {
+                    document.getElementById('login-page').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'block';
+                    loadDashboard();
+                    console.log('Login successful');
+                } else {
+                    alert('Login gagal! Periksa username dan password.');
+                    console.log('Login failed - app might not be loaded');
+                }
+            } catch (e) {
+                console.error('Login error:', e);
+                alert('Error saat login: ' + e.message);
+            }
+        }
+
+        // Navigation
+        function showPage(page) {
+            // Update active sidebar item
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Activate clicked item
+            const items = document.querySelectorAll('.sidebar-item');
+            items.forEach((item, index) => {
+                if (page === 'dashboard' && index === 0) item.classList.add('active');
+                if (page === 'customer' && index === 1) item.classList.add('active');
+                if (page === 'item' && index === 2) item.classList.add('active');
+                if (page === 'transaction' && index === 3) item.classList.add('active');
+                if (page === 'report' && index === 4) item.classList.add('active');
+            });
+
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => {
+                p.classList.remove('active');
+            });
+
+            // Show selected page
+            document.getElementById(`page-${page}`).classList.add('active');
+            currentPage = page;
+
+            // Load data for the page
+            if (page === 'dashboard') loadDashboard();
+            else if (page === 'customer') loadTable('customer');
+            else if (page === 'item') loadTable('item');
+            else if (page === 'transaction') loadTable('transaction');
+            else if (page === 'report') {
+                // Set default dates for report
+                const today = new Date().toISOString().split('T')[0];
+                const firstDay = new Date();
+                firstDay.setDate(1);
+                const firstDayStr = firstDay.toISOString().split('T')[0];
+
+                const startDateInput = document.getElementById('report-start-date');
+                const endDateInput = document.getElementById('report-end-date');
+
+                if (startDateInput && !startDateInput.value) startDateInput.value = firstDayStr;
+                if (endDateInput && !endDateInput.value) endDateInput.value = today;
+
+                loadReport();
+            }
+
+            console.log('Showing page:', page);
+        }
+
+        function loadDashboard() {
+            try {
+                console.log('Loading dashboard data...');
+
+                if (typeof app === 'undefined') {
+                    console.error('app is not defined');
+                    return;
+                }
+
+                const customers = JSON.parse(app.getAllData('customers'));
+                console.log('Customers:', customers);
+                document.getElementById('customer-count').textContent = customers.length || 0;
+
+                const items = JSON.parse(app.getAllData('items'));
+                console.log('Items:', items);
+                document.getElementById('item-count').textContent = items.length || 0;
+
+                const transactions = JSON.parse(app.getAllData('transactions'));
+                console.log('Transactions:', transactions);
+                document.getElementById('transaction-count').textContent = transactions.length || 0;
+
+                let revenue = 0;
+                transactions.forEach(t => revenue += parseFloat(t.total) || 0);
+                document.getElementById('revenue-count').textContent = formatCurrency(revenue);
+
+                updateActivityTable(transactions);
+            } catch (e) {
+                console.error('Error loading dashboard:', e);
+                alert('Error loading dashboard: ' + e.message);
+            }
+        }
+
+        function updateActivityTable(transactions) {
+            const tbody = document.querySelector('#table-activity tbody');
+            tbody.innerHTML = '';
+
+            if (!transactions || transactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div>Tidak ada aktivitas</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const latestTransactions = transactions.slice(-5).reverse();
+
+            latestTransactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(transaction.tanggal)}</td>
+                    <td><span class="badge badge-success">Transaksi</span></td>
+                    <td>${escapeHtml(transaction.custName)} - ${escapeHtml(transaction.keluhan || 'Tidak ada keluhan')}</td>
+                    <td><span class="badge badge-success">Selesai</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function logout() {
+            if (confirm('Anda yakin ingin logout?')) {
+                document.getElementById('main-app').style.display = 'none';
+                document.getElementById('login-page').style.display = 'block';
+                document.getElementById('login-pass').value = '';
+                console.log('Logged out');
+            }
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            const form = document.querySelector(`#${modalId} form`);
+            if (form) form.reset();
+        }
+
+        // Customer functions
+        function openCustomerModal(id = '', name = '', phone = '', address = '') {
+            document.getElementById('customer-id').value = id;
+            document.getElementById('customer-name').value = name || '';
+            document.getElementById('customer-phone').value = phone || '';
+            document.getElementById('customer-address').value = address || '';
+            openModal('modal-customer');
+        }
+
+        function saveCustomer() {
+            const id = document.getElementById('customer-id').value;
+            const name = document.getElementById('customer-name').value;
+            const phone = document.getElementById('customer-phone').value;
+            const address = document.getElementById('customer-address').value;
+
+            app.saveCustomer(id, name, phone, address);
+            closeModal('modal-customer');
+        }
+
+        function editCustomer(id, name, phone, address) {
+            openCustomerModal(id, name, phone, address);
+        }
+
+        function deleteCustomer(id) {
+            if (confirm('Hapus customer ini?')) {
+                app.deleteCustomer(id);
+            }
+        }
+
+        function searchCustomer() {
+            const query = document.getElementById('search-customer').value;
+            const result = app.searchCustomer(query);
+            try {
+                const data = JSON.parse(result);
+                renderTable('customer', data);
+            } catch (e) {
+                console.error('Error parsing JSON:', e);
+            }
+        }
+
+        // Item functions
+        function openItemModal(id = '', name = '', stock = '', price = '') {
+            document.getElementById('item-id').value = id;
+            document.getElementById('item-name').value = name || '';
+            document.getElementById('item-stock').value = stock || '';
+            document.getElementById('item-price').value = price || '';
+            openModal('modal-item');
+        }
+
+        function saveItem() {
+            const id = document.getElementById('item-id').value;
+            const name = document.getElementById('item-name').value;
+            const stock = document.getElementById('item-stock').value;
+            const price = document.getElementById('item-price').value;
+
+            app.saveItem(id, name, stock, price);
+            closeModal('modal-item');
+        }
+
+        function editItem(id, name, stock, price) {
+            openItemModal(id, name, stock, price);
+        }
+
+        function deleteItem(id) {
+            if (confirm('Hapus barang ini?')) {
+                app.deleteItem(id);
+            }
+        }
+
+        function searchItem() {
+            const query = document.getElementById('search-item').value;
+            const result = app.searchItem(query);
+            try {
+                const data = JSON.parse(result);
+                renderTable('item', data);
+            } catch (e) {
+                console.error('Error parsing JSON:', e);
+            }
+        }
+
+        // Transaction functions
+        function openTransactionModal(id = '', customerId = '', date = '', complaint = '', total = '') {
+            try {
+                const customersJson = app.getAllData('customers');
+                const customers = JSON.parse(customersJson);
+                const select = document.getElementById('transaction-customer');
+                select.innerHTML = '<option value="">Pilih Customer</option>';
+
+                customers.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.id;
+                    option.textContent = `${customer.nama} (${customer.noTelp})`;
+                    if (customer.id === customerId) option.selected = true;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Error loading customers:', e);
+            }
+
+            document.getElementById('transaction-id').value = id;
+            document.getElementById('transaction-date').value = date || new Date().toISOString().split('T')[0];
+            document.getElementById('transaction-complaint').value = complaint || '';
+            document.getElementById('transaction-total').value = total || '';
+
+            openModal('modal-transaction');
+        }
+
+        function saveTransaction() {
+            const id = document.getElementById('transaction-id').value;
+            const customerId = document.getElementById('transaction-customer').value;
+            const date = document.getElementById('transaction-date').value;
+            const complaint = document.getElementById('transaction-complaint').value;
+            const total = document.getElementById('transaction-total').value;
+
+            // Validasi
+            if (!customerId) {
+                alert('Harap pilih customer!');
+                return;
+            }
+
+            if (!date) {
+                alert('Harap isi tanggal!');
+                return;
+            }
+
+            if (!total || parseFloat(total) <= 0) {
+                alert('Total bayar harus lebih dari 0!');
+                return;
+            }
+
+            app.saveTransaction(id, customerId, date, complaint, total);
+            closeModal('modal-transaction');
+        }
+
+        function editTransaction(id, customerId, date, complaint, total) {
+            openTransactionModal(id, customerId, date, complaint, total);
+        }
+
+        function deleteTransaction(id) {
+            if (confirm('Hapus transaksi ini?')) {
+                app.deleteTransaction(id);
+            }
+        }
+
+        // Report functions
+        function loadReport() {
+            const startDate = document.getElementById('report-start-date').value;
+            const endDate = document.getElementById('report-end-date').value;
+
+            if (!startDate || !endDate) {
+                alert('Harap pilih tanggal mulai dan tanggal akhir');
+                return;
+            }
+
+            // Validasi tanggal
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
+                return;
+            }
+
+            const result = app.getReport(startDate, endDate);
+            try {
+                const data = JSON.parse(result);
+                renderTable('report', data);
+            } catch (e) {
+                console.error('Error parsing JSON:', e);
+            }
+        }
+
+        function generatePDFReport() {
+            const startDate = document.getElementById('report-start-date').value;
+            const endDate = document.getElementById('report-end-date').value;
+
+            if (!startDate || !endDate) {
+                alert('Harap pilih tanggal mulai dan tanggal akhir');
+                return;
+            }
+
+            // Validasi tanggal
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
+                return;
+            }
+
+            // Validasi data sebelum generate
+            const tableBody = document.querySelector('#table-report tbody');
+            if (!tableBody || tableBody.children.length === 0) {
+                alert('Tidak ada data transaksi untuk periode ini. Silahkan klik "Tampilkan" terlebih dahulu.');
+                return;
+            }
+
+            // Konfirmasi sebelum generate
+            if (confirm('Apakah Anda yakin ingin membuat laporan PDF untuk periode ini?\n\n' +
+                'Periode: ' + formatDate(startDate) + ' s/d ' + formatDate(endDate))) {
+                try {
+                    console.log('Generating PDF report from', startDate, 'to', endDate);
+                    app.generatePDFReport(startDate, endDate);
+                } catch (e) {
+                    console.error('Error generating PDF report:', e);
+                    alert('Error: ' + e.message);
+                }
+            }
+        }
+
+        function printReport() {
+            const startDate = document.getElementById('report-start-date').value;
+            const endDate = document.getElementById('report-end-date').value;
+
+            if (!startDate || !endDate) {
+                alert('Harap pilih tanggal mulai dan tanggal akhir terlebih dahulu dengan menekan tombol "Tampilkan"');
+                return;
+            }
+
+            // Buat window baru untuk print
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+            // Ambil data tabel
+            const reportTable = document.getElementById('table-report').cloneNode(true);
+
+            // Hitung total pendapatan
+            let totalRevenue = 0;
+            const rows = reportTable.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 5) {
+                    const totalText = cells[4].textContent.replace('Rp ', '').replace(/\./g, '');
+                    totalRevenue += parseFloat(totalText) || 0;
+                }
+            });
+
+            // Buat konten HTML untuk print
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Laporan Bengkel Khayangan Mobil</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            padding: 20px;
+                            margin: 0;
+                        }
+                        .header {
+                            text-align: center;
+                            margin-bottom: 20px;
+                        }
+                        .title {
+                            font-size: 24px;
+                            font-weight: bold;
+                            margin: 0;
+                        }
+                        .subtitle {
+                            font-size: 16px;
+                            margin: 5px 0;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                        }
+                        th, td {
+                            border: 1px solid #000;
+                            padding: 8px;
+                            text-align: left;
+                        }
+                        th {
+                            background-color: #f2f2f2;
+                            font-weight: bold;
+                        }
+                        .summary {
+                            margin-top: 30px;
+                            border-top: 2px solid #000;
+                            padding-top: 15px;
+                        }
+                        .footer {
+                            margin-top: 50px;
+                            text-align: right;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 10px; }
+                            @page { margin: 0.5cm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1 class="title">BENGKEL KHAYANGAN MOBIL</h1>
+                        <p class="subtitle">Jl. Contoh No. 123, Jakarta</p>
+                        <p class="subtitle">Telp: (021) 123-4567</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 20px 0; border-bottom: 2px solid #000; padding-bottom: 10px;">
+                        <h2>LAPORAN TRANSAKSI</h2>
+                        <p><strong>Periode:</strong> ${formatDate(startDate)} s/d ${formatDate(endDate)}</p>
+                        <p><strong>Tanggal Cetak:</strong> ${new Date().toLocaleDateString('id-ID')}</p>
+                    </div>
+                    
+                    ${reportTable.outerHTML}
+                    
+                    <div class="summary">
+                        <div style="float: right; text-align: right;">
+                            <p><strong>Total Transaksi:</strong> ${rows.length}</p>
+                            <p><strong>Total Pendapatan:</strong> Rp ${totalRevenue.toLocaleString('id-ID')}</p>
+                        </div>
+                        <div style="clear: both;"></div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>Hormat kami,</p>
+                        <br><br><br>
+                        <p><strong>Manager Bengkel</strong></p>
+                    </div>
+                    
+                    <script>
+                        // Style tabel untuk print
+                        const table = document.querySelector('table');
+                        table.style.width = '100%';
+                        table.style.borderCollapse = 'collapse';
+                        
+                        const ths = table.querySelectorAll('th');
+                        ths.forEach(th => {
+                            th.style.border = '1px solid #000';
+                            th.style.padding = '8px';
+                            th.style.backgroundColor = '#f0f0f0';
+                        });
+                        
+                        const tds = table.querySelectorAll('td');
+                        tds.forEach(td => {
+                            td.style.border = '1px solid #000';
+                            td.style.padding = '6px';
+                        });
+                    <\/script>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+
+            // Tunggu konten dimuat lalu print
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+                // printWindow.close(); // Opsional: tutup window setelah print
+            }, 500);
+        }
+
+        // Table functions
+        function loadTable(type) {
+            console.log('Loading table:', type);
+            try {
+                const result = app.getAllData(type + 's');
+                const data = JSON.parse(result);
+                renderTable(type, data);
+            } catch (e) {
+                console.error('Error loading table:', e);
+            }
+        }
+
+        function renderTable(type, data) {
+            const tableId = `table-${type}`;
+            const tbody = document.querySelector(`#${tableId} tbody`);
+
+            if (!tbody) {
+                console.error('Table body not found for:', tableId);
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="${type === 'report' ? 6 : 7}" class="empty-state">
+                            <div class="empty-state-icon">📄</div>
+                            <div>Tidak ada data</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+
+                switch (type) {
+                    case 'customer':
+                        const safeNama = escapeHtml(item.nama || '');
+                        const safeTelp = escapeHtml(item.noTelp || '');
+                        const safeAlamat = escapeHtml(item.alamat || '');
+
+                        const customerStatus = Math.random() > 0.3 ? 'Aktif' : 'Nonaktif';
+                        const statusBadge = customerStatus === 'Aktif' ? 'badge-success' : 'badge-danger';
+                        row.innerHTML = `
+                            <td><small>${item.id.substring(0, 8)}...</small></td>
+                            <td>${safeNama}</td>
+                            <td>${safeTelp}</td>
+                            <td>${safeAlamat}</td>
+                            <td><span class="badge ${statusBadge}">${customerStatus}</span></td>
+                            <td>
+                                <button class="btn" 
+                                        onclick="editCustomer('${item.id}', '${safeNama}', '${safeTelp}', '${safeAlamat}')">
+                                    Edit
+                                </button>
+                                <button class="btn btn-danger" 
+                                        onclick="deleteCustomer('${item.id}')">
+                                    Hapus
+                                </button>
+                            </td>
+                        `;
+                        break;
+
+                    case 'item':
+                        const safeItemNama = escapeHtml(item.nama || '');
+                        const itemStatus = item.stok > 0 ? 'Tersedia' : 'Habis';
+                        const itemStatusClass = item.stok > 10 ? 'badge-success' : (item.stok > 0 ? 'badge-warning' : 'badge-danger');
+                        row.innerHTML = `
+                            <td><small>${item.id.substring(0, 8)}...</small></td>
+                            <td>${safeItemNama}</td>
+                            <td>${item.stok}</td>
+                            <td>Rp ${formatCurrency(item.harga)}</td>
+                            <td><span class="badge ${itemStatusClass}">${itemStatus}</span></td>
+                            <td>
+                                <button class="btn" 
+                                        onclick="editItem('${item.id}', '${safeItemNama}', ${item.stok}, ${item.harga})">
+                                    Edit
+                                </button>
+                                <button class="btn btn-danger" 
+                                        onclick="deleteItem('${item.id}')">
+                                    Hapus
+                                </button>
+                            </td>
+                        `;
+                        break;
+
+                    case 'transaction':
+                        const safeCustName = escapeHtml(item.custName || '');
+                        const safeKeluhan = escapeHtml(item.keluhan || '');
+                        row.innerHTML = `
+                            <td><small>${item.id.substring(0, 8)}...</small></td>
+                            <td>${formatDate(item.tanggal)}</td>
+                            <td>${safeCustName}</td>
+                            <td>${safeKeluhan}</td>
+                            <td>Rp ${formatCurrency(item.total)}</td>
+                            <td><span class="badge badge-success">Selesai</span></td>
+                            <td>
+                                <button class="btn" 
+                                        onclick="editTransaction('${item.id}', '${item.custId}', '${item.tanggal}', '${safeKeluhan}', ${item.total})">
+                                    Edit
+                                </button>
+                                <button class="btn btn-danger" 
+                                        onclick="deleteTransaction('${item.id}')">
+                                    Hapus
+                                </button>
+                            </td>
+                        `;
+                        break;
+
+                    case 'report':
+                        const safeReportCustName = escapeHtml(item.custName || '');
+                        const safeReportKeluhan = escapeHtml(item.keluhan || '');
+                        row.innerHTML = `
+                            <td>${formatDate(item.tanggal)}</td>
+                            <td><small>${item.id.substring(0, 8)}...</small></td>
+                            <td>${safeReportCustName}</td>
+                            <td>${safeReportKeluhan}</td>
+                            <td>Rp ${formatCurrency(item.total)}</td>
+                            <td><span class="badge badge-success">Selesai</span></td>
+                        `;
+                        break;
+                }
+
+                tbody.appendChild(row);
+            });
+        }
+
+        // Utility functions
+        function formatCurrency(amount) {
+            if (!amount) return '0';
+            return amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        // Fungsi helper untuk escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        window.onload = function () {
+            console.log('Window loaded');
+
+            const today = new Date().toISOString().split('T')[0];
+            const firstDay = new Date();
+            firstDay.setDate(1);
+            const firstDayStr = firstDay.toISOString().split('T')[0];
+
+            const startDateInput = document.getElementById('report-start-date');
+            const endDateInput = document.getElementById('report-end-date');
+            const transactionDateInput = document.getElementById('transaction-date');
+
+            if (startDateInput) startDateInput.value = firstDayStr;
+            if (endDateInput) endDateInput.value = today;
+            if (transactionDateInput) transactionDateInput.value = today;
+
+            if (typeof app !== 'undefined') {
+                console.log('Java Bridge (app) is available');
+            } else {
+                console.warn('Java Bridge (app) is not available yet');
+            }
+        };
+    </script>
+</body>
+
+</html>
