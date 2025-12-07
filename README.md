@@ -58,7 +58,7 @@ Ikuti langkah-langkah berikut untuk menjalankan aplikasi di komputer lokal Anda:
 ### 1. Clone Repository
 Buka terminal atau command prompt, lalu jalankan:
 ```bash
-git clone https://github.com/USERNAME_ANDA/bengkel-app.git
+git clone https://github.com/NasiGoRank/Bengkel-Java.git
 cd bengkel-app
 ```
 
