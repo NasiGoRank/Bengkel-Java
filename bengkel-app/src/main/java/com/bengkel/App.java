@@ -13,9 +13,12 @@ import java.util.Objects;
 
 public class App extends Application {
     private JavaBridge bridge;
+    private Stage primaryStage; // Simpan reference ke primaryStage
 
     @Override
     public void start(Stage stage) {
+        this.primaryStage = stage; // Simpan reference
+
         // Optimasi rendering WebView
         System.setProperty("prism.order", "sw");
         System.setProperty("prism.text", "t2k");
@@ -50,6 +53,7 @@ public class App extends Application {
                 try {
                     JSObject window = (JSObject) webEngine.executeScript("window");
                     this.bridge = new JavaBridge(webEngine);
+                    this.bridge.setPrimaryStage(primaryStage); // SET PRIMARY STAGE DI SINI!
                     window.setMember("app", this.bridge);
                     System.out.println("JavaBridge initialized successfully");
                     webEngine.executeScript("console.log('JavaFX WebView ready')");

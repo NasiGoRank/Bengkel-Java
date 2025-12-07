@@ -1,146 +1,306 @@
 package com.bengkel.util;
 
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.io.font.constants.StandardFonts;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
 public class PDFGenerator {
 
-    public static String generateReportPDF(List<String[]> reportData,
-            String startDate,
-            String endDate,
-            double totalRevenue) throws IOException {
+        public static String generateReportPDF(List<String[]> reportData,
+                        String startDate,
+                        String endDate,
+                        double totalRevenue,
+                        String savePath) throws IOException {
 
-        // Create timestamp for filename
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        String timestamp = dateFormat.format(new Date());
+                // Buat parent directory jika belum ada
+                File pdfFile = new File(savePath);
+                File parentDir = pdfFile.getParentFile();
+                if (parentDir != null && !parentDir.exists()) {
+                        parentDir.mkdirs();
+                }
 
-        // Create directory if not exists
-        File reportsDir = new File("reports");
-        if (!reportsDir.exists()) {
-            reportsDir.mkdir();
+                try (PDDocument document = new PDDocument()) {
+                        List<PDPage> pages = new java.util.ArrayList<>();
+                        PDPage currentPage = new PDPage(PDRectangle.A4);
+                        pages.add(currentPage);
+                        document.addPage(currentPage);
+
+                        PDPageContentStream contentStream = null;
+
+                        try {
+                                contentStream = new PDPageContentStream(document, currentPage);
+
+                                // Set margin dan posisi awal
+                                float margin = 50;
+                                float yPosition = currentPage.getMediaBox().getHeight() - margin;
+                                float leading = 14;
+                                float bottomMargin = 70;
+
+                                // Judul
+                                contentStream.beginText();
+                                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 16);
+                                contentStream.newLineAtOffset(margin, yPosition);
+                                contentStream.showText("LAPORAN TRANSAKSI BENGKEL KHAYANGAN MOBIL");
+                                contentStream.endText();
+
+                                yPosition -= 30;
+                                contentStream.beginText();
+                                contentStream.setFont(PDType1Font.HELVETICA, 12);
+                                contentStream.newLineAtOffset(margin, yPosition);
+                                contentStream.showText(
+                                                "Periode: " + formatDate(startDate) + " s/d " + formatDate(endDate));
+                                contentStream.endText();
+
+                                yPosition -= 30;
+                                contentStream.beginText();
+                                contentStream.setFont(PDType1Font.HELVETICA, 10);
+                                contentStream.newLineAtOffset(margin, yPosition);
+                                contentStream.showText("Tanggal Cetak: "
+                                                + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
+                                contentStream.endText();
+
+                                // Garis pemisah
+                                yPosition -= 20;
+                                contentStream.moveTo(margin, yPosition);
+                                contentStream.lineTo(currentPage.getMediaBox().getWidth() - margin, yPosition);
+                                contentStream.stroke();
+
+                                // Header tabel
+                                yPosition -= 20;
+                                float[] columnWidths = { 80, 80, 120, 120, 80 };
+                                String[] headers = { "Tanggal", "ID", "Customer", "Keluhan", "Total" };
+
+                                // Tulis header tabel
+                                float tableX = margin;
+                                for (int i = 0; i < headers.length; i++) {
+                                        contentStream.beginText();
+                                        contentStream.setFont(PDType1Font.HELVETICA_BOLD, 10);
+                                        contentStream.newLineAtOffset(tableX, yPosition);
+                                        contentStream.showText(headers[i]);
+                                        contentStream.endText();
+                                        tableX += columnWidths[i];
+                                }
+
+                                // Garis bawah header
+                                yPosition -= 2;
+                                contentStream.moveTo(margin, yPosition);
+                                contentStream.lineTo(currentPage.getMediaBox().getWidth() - margin, yPosition);
+                                contentStream.stroke();
+
+                                // Data tabel
+                                yPosition -= 15;
+                                contentStream.setFont(PDType1Font.HELVETICA, 9);
+
+                                int currentPageIndex = 0;
+                                int maxRowsPerPage = calculateMaxRows(reportData.size());
+
+                                for (int i = 0; i < reportData.size(); i++) {
+                                        String[] row = reportData.get(i);
+
+                                        // Jika halaman habis, buat halaman baru
+                                        if (yPosition < bottomMargin && i < reportData.size() - 1) {
+                                                // Tutup stream yang lama
+                                                contentStream.close();
+
+                                                // Buat halaman baru
+                                                currentPage = new PDPage(PDRectangle.A4);
+                                                pages.add(currentPage);
+                                                document.addPage(currentPage);
+                                                contentStream = new PDPageContentStream(document, currentPage);
+                                                currentPageIndex++;
+
+                                                // Reset posisi
+                                                yPosition = currentPage.getMediaBox().getHeight() - margin;
+                                                contentStream.setFont(PDType1Font.HELVETICA, 9);
+
+                                                // Header halaman baru
+                                                contentStream.beginText();
+                                                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 10);
+                                                contentStream.newLineAtOffset(margin, yPosition);
+                                                contentStream.showText(
+                                                                "Laporan (lanjutan) - Halaman "
+                                                                                + (currentPageIndex + 1));
+                                                contentStream.endText();
+                                                yPosition -= 30;
+
+                                                // Tulis header tabel lagi
+                                                tableX = margin;
+                                                for (int j = 0; j < headers.length; j++) {
+                                                        contentStream.beginText();
+                                                        contentStream.setFont(PDType1Font.HELVETICA_BOLD, 10);
+                                                        contentStream.newLineAtOffset(tableX, yPosition);
+                                                        contentStream.showText(headers[j]);
+                                                        contentStream.endText();
+                                                        tableX += columnWidths[j];
+                                                }
+
+                                                yPosition -= 15;
+                                        }
+
+                                        // Tulis baris data
+                                        tableX = margin;
+
+                                        // Tanggal
+                                        contentStream.beginText();
+                                        contentStream.newLineAtOffset(tableX, yPosition);
+                                        contentStream.showText(formatDate(row[3]));
+                                        contentStream.endText();
+                                        tableX += columnWidths[0];
+
+                                        // ID (singkat)
+                                        String shortId = row[0].length() > 8 ? row[0].substring(0, 8) + "..." : row[0];
+                                        contentStream.beginText();
+                                        contentStream.newLineAtOffset(tableX, yPosition);
+                                        contentStream.showText(shortId);
+                                        contentStream.endText();
+                                        tableX += columnWidths[1];
+
+                                        // Customer
+                                        contentStream.beginText();
+                                        contentStream.newLineAtOffset(tableX, yPosition);
+                                        contentStream.showText(truncateText(row[2], 20));
+                                        contentStream.endText();
+                                        tableX += columnWidths[2];
+
+                                        // Keluhan
+                                        String keluhan = row[4] != null && !row[4].isEmpty() ? row[4] : "-";
+                                        contentStream.beginText();
+                                        contentStream.newLineAtOffset(tableX, yPosition);
+                                        contentStream.showText(truncateText(keluhan, 25));
+                                        contentStream.endText();
+                                        tableX += columnWidths[3];
+
+                                        // Total
+                                        contentStream.beginText();
+                                        contentStream.newLineAtOffset(tableX, yPosition);
+                                        contentStream.showText("Rp " + formatCurrency(Double.parseDouble(row[5])));
+                                        contentStream.endText();
+
+                                        yPosition -= 15;
+                                }
+
+                                // Summary di halaman terakhir
+                                if (currentPageIndex == pages.size() - 1 || reportData.size() <= maxRowsPerPage) {
+                                        yPosition -= 20;
+                                        contentStream.beginText();
+                                        contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+                                        contentStream.newLineAtOffset(margin, yPosition);
+                                        contentStream.showText("Ringkasan Laporan:");
+                                        contentStream.endText();
+
+                                        yPosition -= 15;
+                                        contentStream.beginText();
+                                        contentStream.setFont(PDType1Font.HELVETICA, 10);
+                                        contentStream.newLineAtOffset(margin, yPosition);
+                                        contentStream.showText("Total Transaksi: " + reportData.size());
+                                        contentStream.endText();
+
+                                        yPosition -= 15;
+                                        contentStream.beginText();
+                                        contentStream.setFont(PDType1Font.HELVETICA_BOLD, 11);
+                                        contentStream.newLineAtOffset(margin, yPosition);
+                                        contentStream.showText("Total Pendapatan: Rp " + formatCurrency(totalRevenue));
+                                        contentStream.endText();
+                                }
+
+                        } finally {
+                                // Pastikan contentStream ditutup
+                                if (contentStream != null) {
+                                        contentStream.close();
+                                }
+                        }
+
+                        // Simpan PDF
+                        document.save(savePath);
+                        System.out.println("PDF saved to: " + savePath);
+
+                } catch (Exception e) {
+                        System.err.println("Error in PDF generation: " + e.getMessage());
+                        e.printStackTrace();
+                        throw e;
+                }
+
+                return savePath;
         }
 
-        String fileName = "reports/Laporan_" + startDate + "_to_" + endDate + "_" + timestamp + ".pdf";
-        String filePath = new File(fileName).getAbsolutePath();
-
-        PdfWriter writer = new PdfWriter(filePath);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf);
-
-        // Set font
-        PdfFont font = PdfFontFactory.createFont(StandardFonts.HELVETICA);
-        PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-
-        // Header
-        document.add(new Paragraph("LAPORAN TRANSAKSI BENGKEL KHAYANGAN MOBIL")
-                .setFont(fontBold)
-                .setFontSize(16)
-                .setTextAlignment(TextAlignment.CENTER));
-
-        document.add(new Paragraph("Periode: " + formatDate(startDate) + " s/d " + formatDate(endDate))
-                .setFont(font)
-                .setFontSize(12)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(20));
-
-        // Create table
-        float[] columnWidths = { 2, 2, 3, 4, 2, 2 };
-        Table table = new Table(UnitValue.createPercentArray(columnWidths));
-        table.setWidth(UnitValue.createPercentValue(100));
-
-        // Table headers
-        String[] headers = { "Tanggal", "ID", "Customer", "Keluhan", "Total", "Status" };
-        for (String header : headers) {
-            table.addHeaderCell(new Cell().add(new Paragraph(header)
-                    .setFont(fontBold)
-                    .setFontSize(10))
-                    .setTextAlignment(TextAlignment.CENTER));
+        private static int calculateMaxRows(int totalRows) {
+                // Perkiraan maksimal baris per halaman
+                if (totalRows <= 25)
+                        return 25;
+                if (totalRows <= 50)
+                        return 25;
+                return 30; // Untuk data yang sangat banyak
         }
 
-        // Add data rows
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
+        /**
+         * Format date string from yyyy-MM-dd to dd/MM/yyyy
+         */
+        private static String formatDate(String dateString) {
+                if (dateString == null || dateString.isEmpty()) {
+                        return "-";
+                }
 
-        for (String[] row : reportData) {
-            try {
-                Date date = inputFormat.parse(row[3]);
-                String formattedDate = outputFormat.format(date);
-                table.addCell(new Cell().add(new Paragraph(formattedDate))
-                        .setFont(font).setFontSize(9));
-            } catch (Exception e) {
-                table.addCell(new Cell().add(new Paragraph(row[3]))
-                        .setFont(font).setFontSize(9));
-            }
+                try {
+                        // Try to parse various common date formats
+                        SimpleDateFormat[] possibleFormats = {
+                                        new SimpleDateFormat("yyyy-MM-dd"),
+                                        new SimpleDateFormat("dd/MM/yyyy"),
+                                        new SimpleDateFormat("MM/dd/yyyy"),
+                                        new SimpleDateFormat("yyyy/MM/dd")
+                        };
 
-            table.addCell(new Cell().add(new Paragraph(row[0].length() > 8 ? row[0].substring(0, 8) + "..." : row[0]))
-                    .setFont(font).setFontSize(9));
+                        Date date = null;
+                        for (SimpleDateFormat sdf : possibleFormats) {
+                                try {
+                                        sdf.setLenient(false);
+                                        date = sdf.parse(dateString);
+                                        break;
+                                } catch (ParseException e) {
+                                        // Try next format
+                                }
+                        }
 
-            table.addCell(new Cell().add(new Paragraph(row[2]))
-                    .setFont(font).setFontSize(9));
+                        if (date != null) {
+                                SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
+                                return outputFormat.format(date);
+                        }
+                } catch (Exception e) {
+                        // If parsing fails, return the original string
+                }
 
-            table.addCell(new Cell().add(new Paragraph(row[4] != null ? row[4] : "-"))
-                    .setFont(font).setFontSize(9));
-
-            table.addCell(new Cell().add(new Paragraph(formatCurrency(Double.parseDouble(row[5]))))
-                    .setFont(font).setFontSize(9)
-                    .setTextAlignment(TextAlignment.RIGHT));
-
-            table.addCell(new Cell().add(new Paragraph("Selesai"))
-                    .setFont(font).setFontSize(9)
-                    .setTextAlignment(TextAlignment.CENTER));
+                return dateString; // Return original if cannot parse
         }
 
-        document.add(table);
+        /**
+         * Truncate text to specified length and add ellipsis if needed
+         */
+        private static String truncateText(String text, int maxLength) {
+                if (text == null) {
+                        return "-";
+                }
 
-        // Summary
-        document.add(new Paragraph("\n"));
-        document.add(new Paragraph("Ringkasan Laporan:")
-                .setFont(fontBold)
-                .setFontSize(12));
+                if (text.length() <= maxLength) {
+                        return text;
+                }
 
-        document.add(new Paragraph("Total Transaksi: " + reportData.size())
-                .setFont(font)
-                .setFontSize(10));
-
-        document.add(new Paragraph("Total Pendapatan: " + formatCurrency(totalRevenue))
-                .setFont(fontBold)
-                .setFontSize(11));
-
-        document.add(new Paragraph("Tanggal Cetak: " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()))
-                .setFont(font)
-                .setFontSize(9)
-                .setTextAlignment(TextAlignment.RIGHT));
-
-        document.close();
-
-        return filePath;
-    }
-
-    private static String formatDate(String dateStr) {
-        try {
-            SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd");
-            SimpleDateFormat output = new SimpleDateFormat("dd/MM/yyyy");
-            return output.format(input.parse(dateStr));
-        } catch (Exception e) {
-            return dateStr;
+                return text.substring(0, maxLength - 3) + "...";
         }
-    }
 
-    private static String formatCurrency(double amount) {
-        return String.format("Rp %,.0f", amount);
-    }
+        /**
+         * Format currency with thousands separator
+         */
+        private static String formatCurrency(double amount) {
+                DecimalFormat formatter = new DecimalFormat("#,###");
+                return formatter.format(amount);
+        }
 }

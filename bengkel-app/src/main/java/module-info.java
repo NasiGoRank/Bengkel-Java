@@ -2,19 +2,15 @@ module com.bengkel {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
+    requires javafx.graphics;
     requires jdk.jsobject;
 
-    // Wajib ada untuk akses database JDBC & SQLite
+    // SQLite and database
     requires java.sql;
     requires org.xerial.sqlitejdbc;
 
-    // Untuk Java Desktop API (untuk Desktop.getDesktop() jika diperlukan)
-    requires java.desktop;
-
-    // Untuk iText7 PDF (nama modul dari META-INF/MANIFEST.MF di JAR)
-    requires kernel;
-    requires layout;
-    requires io;
+    // Apache PDFBox
+    requires org.apache.pdfbox;
 
     opens com.bengkel to javafx.fxml;
     opens com.bengkel.database to javafx.fxml;

@@ -1,18 +1,28 @@
 package com.bengkel;
 
 import javafx.scene.web.WebEngine;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import com.bengkel.database.DatabaseService;
 import com.bengkel.util.PDFGenerator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class JavaBridge {
     private WebEngine webEngine;
+    private Stage primaryStage;
 
     public JavaBridge(WebEngine webEngine) {
         this.webEngine = webEngine;
+    }
+
+    // Setter untuk primaryStage (akan dipanggil dari App.java)
+    public void setPrimaryStage(Stage primaryStage) {
+        this.primaryStage = primaryStage;
     }
 
     // ------------------------------------------------
@@ -391,11 +401,21 @@ public class JavaBridge {
             // Calculate total revenue
             double totalRevenue = DatabaseService.getRevenueByPeriod(startDate.trim(), endDate.trim());
 
-            // Generate PDF
-            String pdfPath = PDFGenerator.generateReportPDF(reportData, startDate.trim(), endDate.trim(), totalRevenue);
+            // Show FileChooser untuk memilih lokasi penyimpanan
+            String savePath = showSaveDialog(startDate.trim(), endDate.trim());
 
-            // Show message without opening (removed Desktop import)
-            showAlert("Laporan PDF berhasil dibuat di:\n" + pdfPath);
+            if (savePath == null || savePath.isEmpty()) {
+                showAlert("Penyimpanan PDF dibatalkan!");
+                return;
+            }
+
+            // Generate PDF di lokasi yang dipilih
+            String pdfPath = PDFGenerator.generateReportPDF(reportData, startDate.trim(), endDate.trim(), totalRevenue,
+                    savePath);
+
+            // Show success message
+            File pdfFile = new File(pdfPath);
+            showAlert("Laporan PDF berhasil disimpan di:\n" + pdfFile.getAbsolutePath());
 
         } catch (Exception e) {
             System.err.println("Error generating PDF: " + e.getMessage());
@@ -403,6 +423,61 @@ public class JavaBridge {
             e.printStackTrace();
         }
     }
+
+private String showSaveDialog(String startDate, String endDate) {
+    try {
+        // Buat nama file default
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        String timestamp = dateFormat.format(new Date());
+        String defaultFileName = "Laporan_" + startDate + "_to_" + endDate + "_" + timestamp + ".pdf";
+
+        // Gunakan Platform.runLater untuk FileChooser
+        final String[] savePath = new String[1];
+        final CountDownLatch latch = new CountDownLatch(1);
+        
+        javafx.application.Platform.runLater(() -> {
+            try {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Simpan Laporan PDF");
+                fileChooser.setInitialFileName(defaultFileName);
+                
+                FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
+                        "PDF files (*.pdf)", "*.pdf");
+                fileChooser.getExtensionFilters().add(extFilter);
+                
+                String userHome = System.getProperty("user.home");
+                File documentsDir = new File(userHome, "Documents");
+                if (documentsDir.exists() && documentsDir.isDirectory()) {
+                    fileChooser.setInitialDirectory(documentsDir);
+                } else {
+                    fileChooser.setInitialDirectory(new File(userHome));
+                }
+                
+                File file = fileChooser.showSaveDialog(primaryStage);
+                
+                if (file != null) {
+                    String filePath = file.getAbsolutePath();
+                    if (!filePath.toLowerCase().endsWith(".pdf")) {
+                        filePath += ".pdf";
+                    }
+                    savePath[0] = filePath;
+                }
+            } catch (Exception e) {
+                System.err.println("Error in FileChooser: " + e.getMessage());
+            } finally {
+                latch.countDown();
+            }
+        });
+        
+        latch.await(30, TimeUnit.SECONDS);
+        return savePath[0];
+        
+    } catch (Exception e) {
+        System.err.println("Error showing save dialog: " + e.getMessage());
+        showAlert("Error membuka dialog penyimpanan: " + e.getMessage());
+        return null;
+    }
+}
 
     // ------------------------------------------------
     // DASHBOARD DATA
