@@ -32,7 +32,7 @@ Aplikasi ini dirancang untuk memudahkan operasional harian bengkel:
 
 Project ini menggabungkan teknologi Java klasik dengan web modern:
 
-* **Bahasa Utama**: Java 17
+* **Bahasa Utama**: Java 21
 * **UI Framework**: JavaFX 21 (WebView)
 * **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
 * **Database**: SQLite (via JDBC `sqlite-jdbc`)
