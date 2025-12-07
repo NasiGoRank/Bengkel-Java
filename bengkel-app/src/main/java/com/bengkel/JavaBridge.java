@@ -424,60 +424,53 @@ public class JavaBridge {
         }
     }
 
-private String showSaveDialog(String startDate, String endDate) {
-    try {
-        // Buat nama file default
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        String timestamp = dateFormat.format(new Date());
-        String defaultFileName = "Laporan_" + startDate + "_to_" + endDate + "_" + timestamp + ".pdf";
+    private String showSaveDialog(String startDate, String endDate) {
+        try {
+            // 1. Buat nama file default
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+            String timestamp = dateFormat.format(new Date());
+            String defaultFileName = "Laporan_" + startDate + "_to_" + endDate + "_" + timestamp + ".pdf";
 
-        // Gunakan Platform.runLater untuk FileChooser
-        final String[] savePath = new String[1];
-        final CountDownLatch latch = new CountDownLatch(1);
-        
-        javafx.application.Platform.runLater(() -> {
-            try {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setTitle("Simpan Laporan PDF");
-                fileChooser.setInitialFileName(defaultFileName);
-                
-                FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
-                        "PDF files (*.pdf)", "*.pdf");
-                fileChooser.getExtensionFilters().add(extFilter);
-                
-                String userHome = System.getProperty("user.home");
-                File documentsDir = new File(userHome, "Documents");
-                if (documentsDir.exists() && documentsDir.isDirectory()) {
-                    fileChooser.setInitialDirectory(documentsDir);
-                } else {
-                    fileChooser.setInitialDirectory(new File(userHome));
-                }
-                
-                File file = fileChooser.showSaveDialog(primaryStage);
-                
-                if (file != null) {
-                    String filePath = file.getAbsolutePath();
-                    if (!filePath.toLowerCase().endsWith(".pdf")) {
-                        filePath += ".pdf";
-                    }
-                    savePath[0] = filePath;
-                }
-            } catch (Exception e) {
-                System.err.println("Error in FileChooser: " + e.getMessage());
-            } finally {
-                latch.countDown();
+            // 2. Setup FileChooser (Langsung, tanpa Platform.runLater)
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Simpan Laporan PDF");
+            fileChooser.setInitialFileName(defaultFileName);
+
+            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
+                    "PDF files (*.pdf)", "*.pdf");
+            fileChooser.getExtensionFilters().add(extFilter);
+
+            // 3. Tentukan direktori awal
+            String userHome = System.getProperty("user.home");
+            File documentsDir = new File(userHome, "Documents");
+            if (documentsDir.exists() && documentsDir.isDirectory()) {
+                fileChooser.setInitialDirectory(documentsDir);
+            } else {
+                fileChooser.setInitialDirectory(new File(userHome));
             }
-        });
-        
-        latch.await(30, TimeUnit.SECONDS);
-        return savePath[0];
-        
-    } catch (Exception e) {
-        System.err.println("Error showing save dialog: " + e.getMessage());
-        showAlert("Error membuka dialog penyimpanan: " + e.getMessage());
+
+            // 4. Tampilkan dialog (Ini akan menahan proses sebentar sampai user memilih
+            // file, tapi tidak memacetkan UI secara permanen)
+            File file = fileChooser.showSaveDialog(primaryStage);
+
+            // 5. Kembalikan path file
+            if (file != null) {
+                String filePath = file.getAbsolutePath();
+                if (!filePath.toLowerCase().endsWith(".pdf")) {
+                    filePath += ".pdf";
+                }
+                return filePath;
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error showing save dialog: " + e.getMessage());
+            // showAlert tidak bisa dipanggil dari sini jika terjadi error di thread file
+            // chooser,
+            // tapi exception print stack trace akan membantu debug.
+            e.printStackTrace();
+        }
         return null;
     }
-}
 
     // ------------------------------------------------
     // DASHBOARD DATA
