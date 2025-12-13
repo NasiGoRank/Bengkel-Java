@@ -22,19 +22,25 @@ public class Transaction {
     private String keluhan;
     private Double totalBayar;
 
-    // FITUR BARU: List Service yang dipilih
+    // TAMBAHAN: Status Transaksi
+    private String status;
+
     @ManyToMany
     @JoinTable(name = "transaction_services", joinColumns = @JoinColumn(name = "transaction_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
     private List<Service> services;
 
-    // FITUR BARU: List Barang dengan quantity
-    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, orphanRemoval = true) // orphanRemoval penting untuk
+                                                                                          // edit
     private List<TransactionItem> items;
 
     @PrePersist
     public void generateId() {
         if (this.id == null || this.id.isEmpty()) {
             this.id = UUID.randomUUID().toString();
+        }
+        // Default status jika kosong
+        if (this.status == null || this.status.isEmpty()) {
+            this.status = "Baru";
         }
     }
 }

@@ -350,6 +350,11 @@ tbody tr:hover {
     color: #f85149;
 }
 
+.badge-primary {
+    background: rgba(56, 139, 253, 0.1);
+    color: #58a6ff;
+}
+
 /* Modals */
 .modal {
     display: none;
@@ -624,6 +629,72 @@ tbody tr:hover {
     }
 }
 
+/* Container untuk daftar service */
+.service-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* Jarak antar kotak service */
+}
+
+/* Kotak pembungkus setiap item service */
+.service-item {
+    display: flex;
+    align-items: center;
+    /* Kunci agar Checkbox & Teks sejajar vertikal */
+    padding: 10px 12px;
+    background-color: #0d1117;
+    /* Warna latar gelap */
+    border: 1px solid #30363d;
+    /* Garis tepi */
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Efek saat mouse diarahkan (Hover) */
+.service-item:hover {
+    background-color: #161b22;
+    border-color: #58a6ff;
+    /* Garis tepi jadi biru */
+}
+
+/* Efek saat item dipilih/dicentang */
+.service-item:has(input:checked) {
+    background-color: rgba(56, 139, 253, 0.1);
+    /* Biru transparan */
+    border-color: #58a6ff;
+}
+
+/* Styling Checkbox */
+.service-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+    cursor: pointer;
+    accent-color: #1f6feb;
+    /* Warna centang biru */
+}
+
+/* Styling Label Teks */
+.service-item label {
+    cursor: pointer;
+    margin-bottom: 0;
+    flex: 1;
+    font-size: 14px;
+    color: #c9d1d9;
+    user-select: none;
+    /* Mencegah teks terblok saat klik cepat */
+}
+
+/* Styling Harga (biar agak abu-abu) */
+.service-price {
+    color: #8b949e;
+    font-size: 13px;
+    margin-left: 5px;
+}
+
+/* Styling ikon kalender pada input date */
 input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
     /* Membalik warna hitam menjadi putih */

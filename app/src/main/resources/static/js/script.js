@@ -187,25 +187,37 @@ function renderTable(type, data) {
                 </td>
             `;
         } else if (type === 'transaction') {
+            // Tentukan warna badge berdasarkan status
+            let badgeColor = 'badge-success';
+            if (item.status === 'Baru') badgeColor = 'badge-warning'; // Kuning
+            if (item.status === 'Sedang Dikerjakan') badgeColor = 'badge-primary'; // Biru (perlu tambah CSS)
+            if (item.status === 'Batal') badgeColor = 'badge-danger'; // Merah
+
             row.innerHTML = `
                 <td><small>${item.id.substring(0, 8)}...</small></td>
                 <td>${formatDate(item.tanggal)}</td>
                 <td>${escapeHtml(item.customerName)}</td>
                 <td>${escapeHtml(item.keluhan)}</td>
                 <td>Rp ${formatCurrency(item.totalBayar)}</td>
-                <td><span class="badge badge-success">Selesai</span></td>
+                <td><span class="badge ${badgeColor}">${item.status || 'Selesai'}</span></td>
                 <td>
+                    <button class="btn" onclick="editTransaction('${item.id}')">Edit</button>
                     <button class="btn btn-danger" onclick="deleteItemAPI('transactions', '${item.id}')">Hapus</button>
                 </td>
             `;
         } else if (type === 'report') {
+            let badgeColor = 'badge-success'; // Default Hijau (Selesai)
+            if (item.status === 'Baru') badgeColor = 'badge-warning'; // Kuning
+            if (item.status === 'Sedang Dikerjakan') badgeColor = 'badge-primary'; // Biru
+            if (item.status === 'Batal') badgeColor = 'badge-danger'; // Merah
+
             row.innerHTML = `
                 <td>${formatDate(item.tanggal)}</td>
                 <td><small>${item.id.substring(0, 8)}...</small></td>
                 <td>${escapeHtml(item.customerName)}</td>
                 <td>${escapeHtml(item.keluhan)}</td>
                 <td>Rp ${formatCurrency(item.totalBayar)}</td>
-                <td><span class="badge badge-success">Selesai</span></td>
+                <td><span class="badge ${badgeColor}">${item.status || 'Selesai'}</span></td>
             `;
         }
         tbody.appendChild(row);
@@ -325,8 +337,8 @@ async function searchItem() {
 }
 
 // Transaction (BARU)
-async function openTransactionModal() {
-    // 1. Fetch Data Master (Parallel fetch biar cepat)
+async function openTransactionModal(editData = null) {
+    // 1. Fetch Data Master
     const [resCust, resServ, resItem] = await Promise.all([
         fetch('/api/customers'),
         fetch('/api/services'),
@@ -350,36 +362,70 @@ async function openTransactionModal() {
     // 3. Populate Service Checkboxes
     const serviceContainer = document.getElementById('service-checkbox-container');
     serviceContainer.innerHTML = '';
+    serviceContainer.className = 'service-list'; // Pastikan CSS service-list ada
+
     availableServices.forEach(s => {
+        // Cek apakah service ini dipilih (jika mode edit)
+        let isChecked = false;
+        if (editData && editData.services) {
+            isChecked = editData.services.some(eds => eds.id === s.id); // Cek ID
+        }
+
         const div = document.createElement('div');
-        div.style.padding = '5px';
+        div.className = 'service-item';
         div.innerHTML = `
-            <input type="checkbox" id="srv-${s.id}" value="${s.id}" data-price="${s.harga}" onchange="calculateTotal()">
-            <label for="srv-${s.id}" style="display:inline; margin-left:8px;">${s.namaService} (Rp ${formatCurrency(s.harga)})</label>
+            <input type="checkbox" id="srv-${s.id}" value="${s.id}" data-price="${s.harga}" onchange="calculateTotal()" ${isChecked ? 'checked' : ''}>
+            <label for="srv-${s.id}">
+                ${s.namaService} 
+                <span class="service-price">(Rp ${formatCurrency(s.harga)})</span>
+            </label>
         `;
         serviceContainer.appendChild(div);
     });
 
-    // 4. Reset Form
-    document.getElementById('transaction-items-body').innerHTML = '';
-    document.getElementById('transaction-id').value = '';
-    document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('transaction-complaint').value = '';
+    // 4. Reset / Fill Form Data
+    const tbody = document.getElementById('transaction-items-body');
+    tbody.innerHTML = '';
 
-    calculateTotal(); // Reset total display
+    if (editData) {
+        // --- MODE EDIT ---
+        document.getElementById('transaction-id').value = editData.id;
+        document.getElementById('transaction-customer').value = editData.customer.id;
+        document.getElementById('transaction-date').value = editData.tanggal;
+        document.getElementById('transaction-complaint').value = editData.keluhan || '';
+        document.getElementById('transaction-status').value = editData.status || 'Baru';
 
+        // Isi barang yang sudah ada
+        if (editData.items && editData.items.length > 0) {
+            editData.items.forEach(itemData => {
+                addTransactionItemRow(itemData.item.id, itemData.quantity);
+            });
+        }
+    } else {
+        // --- MODE BARU ---
+        document.getElementById('transaction-id').value = '';
+        document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('transaction-complaint').value = '';
+        document.getElementById('transaction-status').value = 'Baru';
+        document.getElementById('transaction-customer').value = '';
+    }
+
+    calculateTotal();
     document.getElementById('modal-transaction').style.display = 'flex';
 }
 
 // Menambah baris barang di modal transaksi
-function addTransactionItemRow() {
+function addTransactionItemRow(selectedItemId = null, qtyVal = 1) {
     const tbody = document.getElementById('transaction-items-body');
     const row = document.createElement('tr');
 
-    // Dropdown barang
     let options = '<option value="">Pilih Barang</option>';
     availableItems.forEach(i => {
-        options += `<option value="${i.id}" data-price="${i.harga}">${i.namaBarang} (Stok: ${i.stok}) - Rp ${formatCurrency(i.harga)}</option>`;
+        // Jika mode edit, kita harus hati-hati menampilkan stok.
+        // Logikanya: Stok Tampil = Stok Sekarang di Gudang + Quantity yang sedang dipakai di transaksi ini (jika barangnya sama)
+        // Tapi untuk simplenya kita tampilkan stok gudang saja.
+        const isSelected = selectedItemId && i.id === selectedItemId ? 'selected' : '';
+        options += `<option value="${i.id}" data-price="${i.harga}" ${isSelected}>${i.namaBarang} (Stok: ${i.stok})</option>`;
     });
 
     row.innerHTML = `
@@ -387,7 +433,7 @@ function addTransactionItemRow() {
             <select class="item-select" onchange="calculateTotal()" style="width:100%; padding:5px; background:#0d1117; color:white; border:1px solid #30363d; border-radius:4px;">${options}</select>
         </td>
         <td style="padding: 5px;">
-            <input type="number" class="item-qty" value="1" min="1" onchange="calculateTotal()" style="width:100%; padding:5px; background:#0d1117; color:white; border:1px solid #30363d; border-radius:4px;">
+            <input type="number" class="item-qty" value="${qtyVal}" min="1" onchange="calculateTotal()" style="width:100%; padding:5px; background:#0d1117; color:white; border:1px solid #30363d; border-radius:4px;">
         </td>
         <td style="padding: 5px; text-align:center;">
             <button type="button" onclick="this.closest('tr').remove(); calculateTotal()" style="color:#f85149; background:none; border:none; cursor:pointer; font-weight:bold;">✕</button>
@@ -422,6 +468,20 @@ function calculateTotal() {
     document.getElementById('transaction-display-total').textContent = 'Rp ' + formatCurrency(total);
 }
 
+async function editTransaction(id) {
+    try {
+        const res = await fetch(`/api/transactions/${id}`);
+        if (res.ok) {
+            const data = await res.json();
+            openTransactionModal(data); // Buka modal dengan data
+        } else {
+            alert("Data transaksi tidak ditemukan");
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 async function saveTransaction() {
     // 1. Kumpulkan Service yang dipilih
     const selectedServices = [];
@@ -443,12 +503,13 @@ async function saveTransaction() {
     });
 
     const trans = {
+        id: document.getElementById('transaction-id').value || null, // Kirim ID jika edit
         customer: { id: document.getElementById('transaction-customer').value },
         tanggal: document.getElementById('transaction-date').value,
         keluhan: document.getElementById('transaction-complaint').value,
+        status: document.getElementById('transaction-status').value, // TAMBAHAN STATUS
         services: selectedServices,
         items: selectedItems
-        // Total bayar akan dihitung ulang di backend agar aman
     };
 
     if (!trans.customer.id) { alert('Pilih customer!'); return; }
@@ -462,7 +523,7 @@ async function saveTransaction() {
     if (response.ok) {
         closeModal('modal-transaction');
         loadTable('transaction');
-        loadDashboard(); // Update revenue & stok
+        loadDashboard();
     } else {
         const msg = await response.text();
         alert('Gagal menyimpan: ' + msg);

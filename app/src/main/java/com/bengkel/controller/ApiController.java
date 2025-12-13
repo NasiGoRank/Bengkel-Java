@@ -99,13 +99,40 @@ public class ApiController {
     }
 
     // --- TRANSACTION ---
+    @GetMapping("/transactions/{id}")
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable String id) {
+        return transRepo.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/transactions")
     public ResponseEntity<?> saveTransaction(@RequestBody Transaction trans) {
+        // 1. Set Nama Customer
         customerRepo.findById(trans.getCustomer().getId())
                 .ifPresent(c -> trans.setCustomerName(c.getNama()));
 
+        // LOGIKA EDIT: Jika ID ada, kembalikan stok lama dulu
+        if (trans.getId() != null && !trans.getId().isEmpty()) {
+            Optional<Transaction> oldTransOpt = transRepo.findById(trans.getId());
+            if (oldTransOpt.isPresent()) {
+                Transaction oldTrans = oldTransOpt.get();
+                // Kembalikan stok barang lama
+                if (oldTrans.getItems() != null) {
+                    for (TransactionItem oldItem : oldTrans.getItems()) {
+                        Item dbItem = itemRepo.findById(oldItem.getItem().getId()).orElse(null);
+                        if (dbItem != null) {
+                            dbItem.setStok(dbItem.getStok() + oldItem.getQuantity());
+                            itemRepo.save(dbItem);
+                        }
+                    }
+                }
+            }
+        }
+
         double total = 0.0;
 
+        // 2. Hitung Total Service
         if (trans.getServices() != null) {
             for (Service s : trans.getServices()) {
                 Service dbService = serviceRepo.findById(s.getId()).orElse(null);
@@ -115,19 +142,24 @@ public class ApiController {
             }
         }
 
+        // 3. Proses Barang Baru (Hitung Total + Kurangi Stok)
         if (trans.getItems() != null) {
             for (TransactionItem ti : trans.getItems()) {
                 Item dbItem = itemRepo.findById(ti.getItem().getId()).orElse(null);
                 if (dbItem != null) {
+                    // Cek stok (Saat edit, stok di DB sudah ditambah stok lama, jadi aman)
                     if (dbItem.getStok() < ti.getQuantity()) {
                         return ResponseEntity.badRequest()
                                 .body("Stok barang " + dbItem.getNamaBarang() + " tidak mencukupi!");
                     }
+                    // Kurangi stok
                     dbItem.setStok(dbItem.getStok() - ti.getQuantity());
                     itemRepo.save(dbItem);
 
+                    // Tambah ke total
                     total += dbItem.getHarga() * ti.getQuantity();
 
+                    // Set relasi parent
                     ti.setTransaction(trans);
                 }
             }
