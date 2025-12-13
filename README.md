@@ -1,117 +1,163 @@
-# 🔧 Bengkel Management System
+# Bengkel Management System (Spring Boot Edition)
 
-Aplikasi manajemen bengkel mobil berbasis desktop yang modern dan efisien. Dibangun menggunakan kekuatan **Java 17** untuk backend dan **JavaFX WebView** untuk menyajikan antarmuka pengguna yang responsif berbasis **HTML/CSS/JavaScript**. Aplikasi ini menggunakan database lokal **SQLite** sehingga mudah dipindahkan dan tidak memerlukan instalasi server database yang rumit.
+Aplikasi manajemen bengkel mobil modern yang telah dimigrasi menjadi **Web Application** berbasis **Spring Boot**.
+Aplikasi ini menggunakan arsitektur **MVC** dan **REST API**, dengan antarmuka pengguna responsif berbasis **HTML, CSS, dan JavaScript** yang terintegrasi dengan **Thymeleaf**.
 
----
-
-## 🚀 Fitur Utama
-
-Aplikasi ini dirancang untuk memudahkan operasional harian bengkel:
-
-* **📊 Dashboard Interaktif**:
-    * Statistik real-time untuk total customer, barang, transaksi, dan pendapatan.
-    * Tabel aktivitas terbaru untuk memantau transaksi yang baru saja terjadi.
-* **👥 Manajemen Pelanggan (Customer)**:
-    * Tambah, edit, hapus, dan cari data pelanggan.
-    * Penyimpanan data kontak dan alamat yang terstruktur.
-* **📦 Manajemen Barang & Jasa (Inventory)**:
-    * Pencatatan stok sparepart dan harga jasa.
-    * Update stok otomatis dan monitoring ketersediaan barang.
-* **💰 Transaksi & Kasir**:
-    * Pencatatan servis dan penjualan sparepart.
-    * Kalkulasi total bayar otomatis.
-    * Riwayat transaksi lengkap.
-* **📄 Laporan & Ekspor**:
-    * Filter laporan transaksi berdasarkan periode tanggal.
-    * **Cetak PDF Otomatis**: Generate laporan profesional siap cetak menggunakan library *iText7*.
-    * Tampilan cetak (Print View) ramah printer.
+Database menggunakan **H2 Database (file-based)** yang ringan, tanpa memerlukan instalasi server database terpisah.
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
+## Fitur Utama
 
-Project ini menggabungkan teknologi Java klasik dengan web modern:
+Aplikasi ini dirancang untuk mendukung operasional harian bengkel secara efisien:
 
-* **Bahasa Utama**: Java 21
-* **UI Framework**: JavaFX 21 (WebView)
-* **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-* **Database**: SQLite (via JDBC `sqlite-jdbc`)
+### Dashboard Interaktif
+
+* Statistik real-time:
+
+  * Total customer
+  * Total barang
+  * Total transaksi
+  * Total pendapatan
+* Ringkasan aktivitas terbaru dalam bentuk tabel/grafik.
+
+### Manajemen Pelanggan (Customer)
+
+* CRUD data pelanggan melalui REST API.
+* Pencarian pelanggan secara real-time.
+
+### Manajemen Barang (Inventory)
+
+* Monitoring stok sparepart.
+* Indikator status stok:
+
+  * Tersedia
+  * Habis
+
+### Transaksi & Kasir
+
+* Pencatatan servis dan penjualan.
+* Perhitungan total otomatis.
+* Penghapusan riwayat transaksi.
+
+### Laporan & Ekspor
+
+* Filter laporan berdasarkan rentang tanggal.
+* Generate laporan PDF otomatis menggunakan **Apache PDFBox**.
+* Tampilan cetak (print view) untuk printer.
+
+---
+
+## Teknologi yang Digunakan
+
+* **Backend Framework**: Spring Boot 3.4.1
+* **Bahasa Pemrograman**: Java 21
+* **Template Engine**: Thymeleaf
+* **Frontend**: HTML5, CSS3, JavaScript (Fetch API)
+* **Database**: H2 Database (File Mode)
+* **PDF Library**: Apache PDFBox 2.0.29
 * **Build Tool**: Apache Maven
-* **PDF Library**: iText7 (`kernel`, `layout`, `io`)
 
 ---
 
-## 📋 Prasyarat (Prerequisites)
+## Prasyarat
 
-Sebelum menjalankan aplikasi, pastikan komputer Anda memiliki:
+Pastikan environment sudah memenuhi kebutuhan berikut:
 
-1.  **Java Development Kit (JDK) 17** atau versi lebih baru.
-2.  **Apache Maven** (terinstal dan terkonfigurasi di `PATH` sistem).
-3.  **Git** (opsional, untuk clone repository).
-
----
-
-## ⚙️ Cara Instalasi & Menjalankan
-
-Ikuti langkah-langkah berikut untuk menjalankan aplikasi di komputer lokal Anda:
-
-### 1. Clone Repository
-Buka terminal atau command prompt, lalu jalankan:
-```bash
-git clone https://github.com/NasiGoRank/Bengkel-Java.git
-cd bengkel-app
-```
-
-### 2. Compile & Build
-Jalankan perintah Maven berikut untuk mengunduh dependency dan mengompilasi kode sumber:
-
-```bash
-mvn clean compile
-```
-
-### 3. Jalankan Aplikasi
-Gunakan perintah berikut untuk memulai aplikasi:
-
-```bash
-mvn exec:java
-```
-
-Catatan: Saat pertama kali dijalankan, aplikasi akan otomatis membuat file database `bengkel.db` dan folder `reports/` di direktori proyek.
-
-### 🔑 Login Default
-Gunakan kredensial berikut untuk masuk ke sistem sebagai Admin:
-
-- **Username**: admin
-- **Password**: admin123
-
-(Data login ini dibuat otomatis saat inisialisasi database)
+1. Java Development Kit (JDK) 21
+2. Maven (opsional, karena proyek sudah menyertakan Maven Wrapper)
 
 ---
 
-## 📂 Struktur Proyek
+## Cara Instalasi & Menjalankan Aplikasi
 
-Berikut adalah gambaran struktur folder utama proyek ini:
+Ikuti langkah berikut untuk menjalankan aplikasi di localhost.
+
+### 1. Buka Project
+
+Masuk ke direktori root project:
 
 ```
 bengkel-app/
-├── bengkel.db                  # File Database SQLite (Auto-generated)
-├── reports/                    # Folder output Laporan PDF (Auto-generated)
-├── pom.xml                     # Konfigurasi Maven & Dependencies
+```
+
+### 2. Jalankan Aplikasi
+
+Gunakan Maven Wrapper yang sudah disediakan.
+
+**Windows**
+
+```cmd
+mvnw spring-boot:run
+```
+
+**Mac / Linux**
+
+```bash
+./mvnw spring-boot:run
+```
+
+Tunggu hingga muncul log:
+
+```
+Started AppApplication in ... seconds
+```
+
+### 3. Akses Aplikasi
+
+Buka browser dan kunjungi:
+
+```
+http://localhost:8080
+```
+
+---
+
+## Login Default
+
+Saat aplikasi pertama kali dijalankan, sistem akan otomatis membuat akun admin melalui data seeder.
+
+* **Username**: `admin`
+* **Password**: `admin123`
+
+---
+
+## Struktur Proyek
+
+Struktur folder mengikuti standar Spring Boot:
+
+```
+bengkel-app/
+├── bengkelDB.mv.db              # File database H2 (auto-generated)
+├── mvnw
+├── mvnw.cmd
+├── pom.xml                      # Dependency Maven
 └── src/
     └── main/
-        ├── java/
-        │   ├── module-info.java
-        │   └── com/
-        │       └── bengkel/
-        │           ├── App.java                # Main Entry Point
-        │           ├── JavaBridge.java         # Penghubung logika Java <-> JavaScript
-        │           ├── DataStore.java          # Model Data (Legacy/Memory)
-        │           ├── database/
-        │           │   ├── DatabaseConnection.java  # Koneksi & Inisialisasi DB
-        │           │   └── DatabaseService.java     # Logika CRUD SQL
-        │           └── util/
-        │               └── PDFGenerator.java        # Utility pembuatan PDF
+        ├── java/com/bengkel/
+        │   ├── app/
+        │   │   └── AppApplication.java
+        │   │       # Main class + data seeder
+        │   ├── controller/
+        │   │   ├── ApiController.java
+        │   │   │   # REST API endpoints
+        │   │   └── WebController.java
+        │   │       # Routing halaman web
+        │   ├── model/
+        │   │   # Entity JPA (Customer, Item, Transaction)
+        │   ├── repository/
+        │   │   # Interface akses database
+        │   └── util/
+        │       └── PDFGenerator.java
+        │           # Logic pembuatan PDF
         └── resources/
-            └── web/
-                └── index.html          # Tampilan Frontend (HTML/CSS/JS)
+            ├── application.properties
+            │   # Konfigurasi server & database
+            ├── static/
+            │   ├── css/
+            │   │   └── style.css
+            │   └── js/
+            │       └── script.js
+            └── templates/
+                └── index.html
 ```
