@@ -78,7 +78,7 @@ Ikuti langkah berikut untuk menjalankan aplikasi di localhost.
 Masuk ke direktori root project:
 
 ```
-bengkel-app/
+cd app/
 ```
 
 ### 2. Jalankan Aplikasi
