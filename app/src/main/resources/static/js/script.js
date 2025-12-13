@@ -1,5 +1,8 @@
 // Global state
 let currentPage = 'dashboard';
+// Menyimpan data master agar tidak fetch berulang kali saat kalkulasi di modal
+let availableItems = [];
+let availableServices = [];
 
 console.log("JavaScript loaded successfully from /js/script.js");
 
@@ -50,7 +53,8 @@ function showPage(page) {
 
     // Activate clicked item
     const items = document.querySelectorAll('.sidebar-item');
-    const pageIndex = ['dashboard', 'customer', 'item', 'transaction', 'report'].indexOf(page);
+    // Index mapping harus sesuai urutan di HTML sidebar
+    const pageIndex = ['dashboard', 'customer', 'service', 'item', 'transaction', 'report'].indexOf(page);
     if (pageIndex >= 0 && items[pageIndex]) items[pageIndex].classList.add('active');
 
     // Hide all pages, show selected
@@ -62,6 +66,7 @@ function showPage(page) {
     // Load Data
     if (page === 'dashboard') loadDashboard();
     else if (page === 'customer') loadTable('customer');
+    else if (page === 'service') loadTable('service');
     else if (page === 'item') loadTable('item');
     else if (page === 'transaction') loadTable('transaction');
     else if (page === 'report') {
@@ -82,7 +87,7 @@ async function loadDashboard() {
         document.getElementById('transaction-count').textContent = data.transactions || 0;
         document.getElementById('revenue-count').textContent = 'Rp ' + formatCurrency(data.revenue);
 
-        // Load recent activity (ambil transaksi terakhir)
+        // Load recent activity
         const transResponse = await fetch('/api/transactions');
         const transactions = await transResponse.json();
         updateActivityTable(transactions);
@@ -101,7 +106,6 @@ function updateActivityTable(transactions) {
         return;
     }
 
-    // Ambil 5 transaksi terakhir (backend sdh sort by date desc biasanya, tp kita pastikan reverse jk perlu)
     const latestTransactions = transactions.slice(0, 5);
 
     latestTransactions.forEach(t => {
@@ -118,7 +122,8 @@ function updateActivityTable(transactions) {
 
 // === TABLE & DATA LOADING ===
 async function loadTable(type) {
-    const endpoint = `/api/${type}s`; // customers, items, transactions
+    // endpoint biasanya type + 's', e.g., customers, items
+    const endpoint = `/api/${type}s`;
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
@@ -136,7 +141,9 @@ function renderTable(type, data) {
     tbody.innerHTML = '';
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><div class="empty-state-icon">📄</div><div>Tidak ada data</div></td></tr>`;
+        let colSpan = 6; // default
+        if (type === 'service') colSpan = 4;
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="empty-state"><div class="empty-state-icon">📄</div><div>Tidak ada data</div></td></tr>`;
         return;
     }
 
@@ -144,7 +151,7 @@ function renderTable(type, data) {
         const row = document.createElement('tr');
 
         if (type === 'customer') {
-            const statusBadge = Math.random() > 0.3 ? 'badge-success' : 'badge-danger'; // Simulasi status
+            const statusBadge = Math.random() > 0.3 ? 'badge-success' : 'badge-danger';
             row.innerHTML = `
                 <td><small>${item.id.substring(0, 8)}...</small></td>
                 <td>${escapeHtml(item.nama)}</td>
@@ -154,6 +161,15 @@ function renderTable(type, data) {
                 <td>
                     <button class="btn" onclick="openCustomerModal('${item.id}', '${item.nama}', '${item.noTelp}', '${item.alamat}')">Edit</button>
                     <button class="btn btn-danger" onclick="deleteItemAPI('customers', '${item.id}')">Hapus</button>
+                </td>
+            `;
+        } else if (type === 'service') {
+            row.innerHTML = `
+                <td>${item.id}</td>
+                <td>${escapeHtml(item.namaService)}</td>
+                <td>Rp ${formatCurrency(item.harga)}</td>
+                <td>
+                    <button class="btn btn-danger" onclick="deleteItemAPI('services', '${item.id}')">Hapus</button>
                 </td>
             `;
         } else if (type === 'item') {
@@ -205,8 +221,9 @@ async function deleteItemAPI(endpoint, id) {
     try {
         const res = await fetch(`/api/${endpoint}/${id}`, { method: 'DELETE' });
         if (res.ok) {
-            // Refresh current table
+            // Refresh current table based on endpoint
             if (endpoint.includes('customer')) loadTable('customer');
+            if (endpoint.includes('service')) loadTable('service');
             if (endpoint.includes('item')) loadTable('item');
             if (endpoint.includes('transaction')) loadTable('transaction');
         } else {
@@ -253,6 +270,28 @@ async function searchCustomer() {
     renderTable('customer', data);
 }
 
+// Service
+function openServiceModal() {
+    document.getElementById('service-id').value = '';
+    document.getElementById('service-name').value = '';
+    document.getElementById('service-price').value = '';
+    document.getElementById('modal-service').style.display = 'flex';
+}
+
+async function saveService() {
+    const service = {
+        namaService: document.getElementById('service-name').value,
+        harga: parseFloat(document.getElementById('service-price').value)
+    };
+    await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(service)
+    });
+    closeModal('modal-service');
+    loadTable('service');
+}
+
 // Item
 function openItemModal(id = '', name = '', stock = '', price = '') {
     document.getElementById('item-id').value = id;
@@ -282,52 +321,152 @@ async function saveItem() {
 }
 
 async function searchItem() {
-    // Note: Backend perlu support search item jika belum ada, sementara load all
     loadTable('item');
 }
 
-// Transaction
+// Transaction (BARU)
 async function openTransactionModal() {
-    // Load customers for dropdown
-    const res = await fetch('/api/customers');
-    const customers = await res.json();
+    // 1. Fetch Data Master (Parallel fetch biar cepat)
+    const [resCust, resServ, resItem] = await Promise.all([
+        fetch('/api/customers'),
+        fetch('/api/services'),
+        fetch('/api/items')
+    ]);
 
+    const customers = await resCust.json();
+    availableServices = await resServ.json();
+    availableItems = await resItem.json();
+
+    // 2. Populate Customer Dropdown
     const select = document.getElementById('transaction-customer');
     select.innerHTML = '<option value="">Pilih Customer</option>';
     customers.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = `${c.nama} (${c.noTelp})`;
+        opt.textContent = `${c.nama}`;
         select.appendChild(opt);
     });
 
+    // 3. Populate Service Checkboxes
+    const serviceContainer = document.getElementById('service-checkbox-container');
+    serviceContainer.innerHTML = '';
+    availableServices.forEach(s => {
+        const div = document.createElement('div');
+        div.style.padding = '5px';
+        div.innerHTML = `
+            <input type="checkbox" id="srv-${s.id}" value="${s.id}" data-price="${s.harga}" onchange="calculateTotal()">
+            <label for="srv-${s.id}" style="display:inline; margin-left:8px;">${s.namaService} (Rp ${formatCurrency(s.harga)})</label>
+        `;
+        serviceContainer.appendChild(div);
+    });
+
+    // 4. Reset Form
+    document.getElementById('transaction-items-body').innerHTML = '';
     document.getElementById('transaction-id').value = '';
     document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('transaction-complaint').value = '';
-    document.getElementById('transaction-total').value = '';
+
+    calculateTotal(); // Reset total display
 
     document.getElementById('modal-transaction').style.display = 'flex';
 }
 
+// Menambah baris barang di modal transaksi
+function addTransactionItemRow() {
+    const tbody = document.getElementById('transaction-items-body');
+    const row = document.createElement('tr');
+
+    // Dropdown barang
+    let options = '<option value="">Pilih Barang</option>';
+    availableItems.forEach(i => {
+        options += `<option value="${i.id}" data-price="${i.harga}">${i.namaBarang} (Stok: ${i.stok}) - Rp ${formatCurrency(i.harga)}</option>`;
+    });
+
+    row.innerHTML = `
+        <td style="padding: 5px;">
+            <select class="item-select" onchange="calculateTotal()" style="width:100%; padding:5px; background:#0d1117; color:white; border:1px solid #30363d; border-radius:4px;">${options}</select>
+        </td>
+        <td style="padding: 5px;">
+            <input type="number" class="item-qty" value="1" min="1" onchange="calculateTotal()" style="width:100%; padding:5px; background:#0d1117; color:white; border:1px solid #30363d; border-radius:4px;">
+        </td>
+        <td style="padding: 5px; text-align:center;">
+            <button type="button" onclick="this.closest('tr').remove(); calculateTotal()" style="color:#f85149; background:none; border:none; cursor:pointer; font-weight:bold;">✕</button>
+        </td>
+    `;
+    tbody.appendChild(row);
+}
+
+// Hitung total estimasi di Frontend
+function calculateTotal() {
+    let total = 0;
+
+    // Service
+    const checkboxes = document.querySelectorAll('#service-checkbox-container input[type="checkbox"]:checked');
+    checkboxes.forEach(cb => {
+        total += parseFloat(cb.getAttribute('data-price') || 0);
+    });
+
+    // Barang
+    const rows = document.querySelectorAll('#transaction-items-body tr');
+    rows.forEach(row => {
+        const select = row.querySelector('.item-select');
+        const qtyInput = row.querySelector('.item-qty');
+
+        if (select && select.selectedIndex > 0) {
+            const price = parseFloat(select.options[select.selectedIndex].getAttribute('data-price') || 0);
+            const qty = parseInt(qtyInput.value || 0);
+            total += (price * qty);
+        }
+    });
+
+    document.getElementById('transaction-display-total').textContent = 'Rp ' + formatCurrency(total);
+}
+
 async function saveTransaction() {
+    // 1. Kumpulkan Service yang dipilih
+    const selectedServices = [];
+    document.querySelectorAll('#service-checkbox-container input[type="checkbox"]:checked').forEach(cb => {
+        selectedServices.push({ id: cb.value });
+    });
+
+    // 2. Kumpulkan Barang yang dipilih
+    const selectedItems = [];
+    document.querySelectorAll('#transaction-items-body tr').forEach(row => {
+        const select = row.querySelector('.item-select');
+        const qty = row.querySelector('.item-qty').value;
+        if (select.value) {
+            selectedItems.push({
+                item: { id: select.value },
+                quantity: parseInt(qty)
+            });
+        }
+    });
+
     const trans = {
-        id: document.getElementById('transaction-id').value || null,
-        customer: { id: document.getElementById('transaction-customer').value }, // Object relation
+        customer: { id: document.getElementById('transaction-customer').value },
         tanggal: document.getElementById('transaction-date').value,
         keluhan: document.getElementById('transaction-complaint').value,
-        totalBayar: parseFloat(document.getElementById('transaction-total').value)
+        services: selectedServices,
+        items: selectedItems
+        // Total bayar akan dihitung ulang di backend agar aman
     };
 
     if (!trans.customer.id) { alert('Pilih customer!'); return; }
 
-    await fetch('/api/transactions', {
+    const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(trans)
     });
 
-    closeModal('modal-transaction');
-    loadTable('transaction');
+    if (response.ok) {
+        closeModal('modal-transaction');
+        loadTable('transaction');
+        loadDashboard(); // Update revenue & stok
+    } else {
+        const msg = await response.text();
+        alert('Gagal menyimpan: ' + msg);
+    }
 }
 
 // Report
@@ -358,7 +497,6 @@ function generatePDFReport() {
 }
 
 function printReport() {
-    // Sama seperti sebelumnya, hanya ambil data dari DOM tabel report yg sedang tampil
     const table = document.getElementById('table-report');
     if (table.querySelector('tbody tr').innerText.includes('Tidak ada data')) {
         alert('Tampilkan data laporan terlebih dahulu');
@@ -366,13 +504,11 @@ function printReport() {
     }
 
     const printWindow = window.open('', '_blank', 'width=800,height=600');
-    // ... (Kode print HTML sama seperti sebelumnya, tidak perlu fetch baru)
-    // Sederhananya kita clone tabel yang ada
     const tableClone = table.cloneNode(true);
 
     printWindow.document.write(`
         <html><head><title>Cetak Laporan</title>
-        <style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid black; padding: 8px; }</style>
+        <style>table { width: 100%; border-collapse: collapse; font-family: sans-serif; } th, td { border: 1px solid black; padding: 8px; text-align: left; }</style>
         </head><body>
         <h2>Laporan Bengkel</h2>
         ${tableClone.outerHTML}

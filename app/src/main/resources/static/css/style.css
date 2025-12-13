@@ -457,6 +457,18 @@ tbody tr:hover {
     min-width: 200px;
 }
 
+.date-group input {
+    width: 100%;
+    padding: 10px 14px;
+    background: #0d1117;
+    /* Latar belakang hitam/gelap */
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #c9d1d9;
+    /* Warna teks putih/abu-abu terang */
+    font-size: 14px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .app-main {
@@ -610,4 +622,10 @@ tbody tr:hover {
         display: block !important;
         min-height: auto !important;
     }
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    /* Membalik warna hitam menjadi putih */
+    cursor: pointer;
 }

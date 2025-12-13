@@ -24,6 +24,8 @@ public class ApiController {
     private TransactionRepository transRepo;
     @Autowired
     private AdminRepository adminRepo;
+    @Autowired
+    private ServiceRepository serviceRepo;
 
     // --- AUTH ---
     @PostMapping("/login")
@@ -80,12 +82,60 @@ public class ApiController {
         itemRepo.deleteById(id);
     }
 
+    // --- SERVICE ---
+    @GetMapping("/services")
+    public List<Service> getServices() {
+        return serviceRepo.findAll();
+    }
+
+    @PostMapping("/services")
+    public Service saveService(@RequestBody Service service) {
+        return serviceRepo.save(service);
+    }
+
+    @DeleteMapping("/services/{id}")
+    public void deleteService(@PathVariable Long id) {
+        serviceRepo.deleteById(id);
+    }
+
     // --- TRANSACTION ---
     @PostMapping("/transactions")
-    public Transaction saveTransaction(@RequestBody Transaction trans) {
-        // Otomatis ambil nama customer jika ada ID
-        customerRepo.findById(trans.getCustomer().getId()).ifPresent(c -> trans.setCustomerName(c.getNama()));
-        return transRepo.save(trans);
+    public ResponseEntity<?> saveTransaction(@RequestBody Transaction trans) {
+        customerRepo.findById(trans.getCustomer().getId())
+                .ifPresent(c -> trans.setCustomerName(c.getNama()));
+
+        double total = 0.0;
+
+        if (trans.getServices() != null) {
+            for (Service s : trans.getServices()) {
+                Service dbService = serviceRepo.findById(s.getId()).orElse(null);
+                if (dbService != null) {
+                    total += dbService.getHarga();
+                }
+            }
+        }
+
+        if (trans.getItems() != null) {
+            for (TransactionItem ti : trans.getItems()) {
+                Item dbItem = itemRepo.findById(ti.getItem().getId()).orElse(null);
+                if (dbItem != null) {
+                    if (dbItem.getStok() < ti.getQuantity()) {
+                        return ResponseEntity.badRequest()
+                                .body("Stok barang " + dbItem.getNamaBarang() + " tidak mencukupi!");
+                    }
+                    dbItem.setStok(dbItem.getStok() - ti.getQuantity());
+                    itemRepo.save(dbItem);
+
+                    total += dbItem.getHarga() * ti.getQuantity();
+
+                    ti.setTransaction(trans);
+                }
+            }
+        }
+
+        trans.setTotalBayar(total);
+        Transaction saved = transRepo.save(trans);
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping("/transactions")

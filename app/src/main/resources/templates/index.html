@@ -35,7 +35,7 @@
             <div class="sidebar">
                 <div class="sidebar-item active" onclick="showPage('dashboard')">Dashboard</div>
                 <div class="sidebar-item" onclick="showPage('customer')">Customer</div>
-                <div class="sidebar-item" onclick="showPage('item')">Barang</div>
+                <div class="sidebar-item" onclick="showPage('service')">Daftar Service</div> <div class="sidebar-item" onclick="showPage('item')">Barang</div>
                 <div class="sidebar-item" onclick="showPage('transaction')">Transaksi</div>
                 <div class="sidebar-item" onclick="showPage('report')">Laporan</div>
             </div>
@@ -109,6 +109,28 @@
                                     <th>Telepon</th>
                                     <th>Alamat</th>
                                     <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="page-service" class="page">
+                    <div class="page-header">
+                        <h2>Daftar Jasa Service</h2>
+                    </div>
+                    <div class="toolbar">
+                        <button onclick="openServiceModal()" class="btn btn-success">Tambah Service</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="table-service">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nama Service</th>
+                                    <th>Harga</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -239,6 +261,32 @@
         </div>
     </div>
 
+    <div id="modal-service" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Data Service</h3>
+                <button onclick="closeModal('modal-service')" class="modal-close">×</button>
+            </div>
+            <form onsubmit="saveService(); return false;">
+                <div class="modal-body">
+                    <input type="hidden" id="service-id">
+                    <div class="form-group">
+                        <label>Nama Service</label>
+                        <input type="text" id="service-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Harga</label>
+                        <input type="number" id="service-price" required min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" onclick="closeModal('modal-service')" class="btn">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="modal-item" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -270,33 +318,59 @@
     </div>
 
     <div id="modal-transaction" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="width: 700px; max-width: 95%;">
             <div class="modal-header">
-                <h3>Transaksi</h3>
+                <h3>Transaksi Baru</h3>
                 <button onclick="closeModal('modal-transaction')" class="modal-close">×</button>
             </div>
             <form onsubmit="saveTransaction(); return false;">
                 <div class="modal-body">
                     <input type="hidden" id="transaction-id">
+                    
                     <div class="form-group">
                         <label>Customer</label>
-                        <select id="transaction-customer" required></select>
+                        <select id="transaction-customer" required class="form-control" style="width:100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></select>
                     </div>
+                    
                     <div class="form-group">
                         <label>Tanggal</label>
                         <input type="date" id="transaction-date" required>
                     </div>
+
+                    <div class="form-group" style="border: 1px solid #30363d; padding: 10px; border-radius: 6px;">
+                        <label style="margin-bottom: 10px; display:block;">Pilih Jasa Service:</label>
+                        <div id="service-checkbox-container" style="max-height: 150px; overflow-y: auto;">
+                            </div>
+                    </div>
+
                     <div class="form-group">
-                        <label>Keluhan</label>
+                        <label>Pemakaian Barang / Sparepart</label>
+                        <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #30363d;">
+                                    <th style="padding: 5px; text-align: left;">Barang</th>
+                                    <th style="padding: 5px; width: 80px;">Jml</th>
+                                    <th style="padding: 5px; width: 40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-items-body">
+                                </tbody>
+                        </table>
+                        <button type="button" onclick="addTransactionItemRow()" class="btn btn-success" style="font-size: 12px; padding: 5px 10px;">+ Tambah Barang</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Keluhan / Catatan</label>
                         <textarea id="transaction-complaint"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>Total Bayar</label>
-                        <input type="number" id="transaction-total" required min="0" step="0.01">
+
+                    <div class="form-group" style="text-align: right; margin-top: 20px; border-top: 1px solid #30363d; padding-top: 10px;">
+                        <label style="font-size: 16px;">Total Estimasi:</label>
+                        <h2 id="transaction-display-total" style="color: #3fb950; font-size: 24px;">Rp 0</h2>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
                     <button type="button" onclick="closeModal('modal-transaction')" class="btn">Batal</button>
                 </div>
             </form>
